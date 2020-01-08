@@ -5,16 +5,16 @@ import asyncio
 import signal
 from typing import Tuple
 
-HOST:str = '127.0.0.1'
-PORT:int = 10000
+HOST: str = "127.0.0.1"
+PORT: int = 10000
 signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
 
 
 class EchoProtocol(asyncio.Protocol):
-    name:Tuple[str, int]
+    name: Tuple[str, int]
 
     def connection_made(self, transport):
-        self.name = transport.get_extra_info('peername')
+        self.name = transport.get_extra_info("peername")
         print(f"Connected client on {self.name}.")
         self.transport = transport
 
@@ -23,14 +23,14 @@ class EchoProtocol(asyncio.Protocol):
         print(f"Connection {self.name} closed.")
 
     def data_received(self, data):
-        msg:str = data.decode()
+        msg: str = data.decode()
         print(f"Received: {msg!r} from {self.name!r}")
         print(f"Sendnig:  {msg!r} to   {self.name!r}")
         self.transport.write(data)
 
 
 async def serve() -> None:
-    def shutdown(loop:asyncio.AbstractEventLoop) -> None:
+    def shutdown(loop: asyncio.AbstractEventLoop) -> None:
         """Cleanup tasks tied to the service's shutdown."""
         print(f"Received exit signal, shutting down…")
         loop.stop()
@@ -41,7 +41,7 @@ async def serve() -> None:
     loop = asyncio.get_running_loop()
     server = await loop.create_server(EchoProtocol, HOST, PORT)
     addr = server.sockets[0].getsockname()
-    print(f'Serving on {addr}')
+    print(f"Serving on {addr}")
 
     try:
         await server.serve_forever()
@@ -60,5 +60,5 @@ def main() -> None:
         loop.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
