@@ -49,6 +49,8 @@ async def listen_to_stdin(protocol: EchoClientProtocol) -> None:
             print("listining")
             msg = await aioconsole.ainput()
             await protocol.send_data(msg.encode())
+    except EOFError:
+        protocol.on_con_lost.cancel()
     except Exception:
         raise aio.CancelledError
 
