@@ -11,6 +11,7 @@ signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
 
 class EchoServerProtocol(asyncio.Protocol):
     name: Tuple[str, int]
+
     def connection_made(self, transport):
         self.name = transport.get_extra_info("peername")
         print(f"Connected client on {self.name}.")
@@ -47,10 +48,11 @@ async def serve(id: str, port: int) -> None:
     except asyncio.CancelledError:
         await shutdown(loop)
 
+
 async def main() -> None:
     loop = asyncio.get_running_loop()
-    task1 = asyncio.ensure_future(serve('s1', PORT))
-    task2 = asyncio.ensure_future(serve('s2', PORT + 1))
+    task1 = asyncio.ensure_future(serve("s1", PORT))
+    task2 = asyncio.ensure_future(serve("s2", PORT + 1))
     task = asyncio.gather(task1, task2)
     for s in signals:
         loop.add_signal_handler(s, task.cancel)
