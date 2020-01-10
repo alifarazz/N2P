@@ -45,7 +45,7 @@ class EchoClientProtocol(aio.Protocol):
 async def listen_to_stdin(protocol: EchoClientProtocol) -> None:
     # stdin, stdout = await aioconsole.get_standard_streams()
     try:
-        while True:
+        while not protocol.on_con_lost.done():
             print("listining")
             msg = await aioconsole.ainput()
             await protocol.send_data(msg.encode())
@@ -68,7 +68,8 @@ async def main() -> None:
         listen_to_stdin(cast(EchoClientProtocol, protocol))
     )
 
-    task = aio.gather(listener_to_stdin, on_con_lost)
+    task = aio.gather(on_con_lost)
+    # task = aio.gather(listener_to_stdin, on_con_lost)
     for s in signals:
         loop.add_signal_handler(s, task.cancel)
 
@@ -76,6 +77,7 @@ async def main() -> None:
         await on_con_made
         print("con made")
         await task
+        listener_to_stdin.cancel()
     except aio.exceptions.CancelledError:
         print("Shutdown successful.")
     finally:
