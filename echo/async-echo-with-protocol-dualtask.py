@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import socket
 import asyncio
 import signal
 from typing import Tuple
@@ -10,9 +9,8 @@ PORT: int = 10000
 signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
 
 
-class EchoProtocol(asyncio.Protocol):
+class EchoServerProtocol(asyncio.Protocol):
     name: Tuple[str, int]
-
     def connection_made(self, transport):
         self.name = transport.get_extra_info("peername")
         print(f"Connected client on {self.name}.")
@@ -24,47 +22,43 @@ class EchoProtocol(asyncio.Protocol):
 
     def data_received(self, data):
         msg: str = data.decode()
-        print(f"Received: {msg!r} from {self.name!r}")
-        print(f"Sendnig:  {msg!r} to   {self.name!r}")
+        print(f"Received: {msg} from {self.name}")
+        print(f"Sendnig:  {msg} to   {self.name}")
         self.transport.write(data)
 
 
-async def serve(port: int) -> None:
+async def serve(id: str, port: int) -> None:
     addr: Tuple
 
-    def shutdown(loop: asyncio.AbstractEventLoop) -> None:
+    async def shutdown(loop: asyncio.AbstractEventLoop) -> None:
         """Cleanup tasks tied to the service's shutdown."""
-        print(f"Worker {addr} received signal, shutting down…")
+        print(f"Worker {id} received signal, shutting down…")
         # loop.stop()
-        pending = asyncio.all_tasks()
-        asyncio.gather(*pending)
-        print(f"Worker {addr} shutdown.")
+        # pending = asyncio.all_tasks()
+        # asyncio.gather(*pending)
+        print(f"Worker {id} shutdown.")
 
     loop = asyncio.get_running_loop()
-    server = await loop.create_server(EchoProtocol, HOST, port)
+    server = await loop.create_server(EchoServerProtocol, HOST, port)
     addr = server.sockets[0].getsockname()
     print(f"Serving on {addr}")
-
     try:
         await server.serve_forever()
     except asyncio.CancelledError:
-        shutdown(loop)
+        await shutdown(loop)
 
-
-def main() -> None:
-    loop = asyncio.get_event_loop()
-    task1 = asyncio.ensure_future(serve(PORT))
-    task2 = asyncio.ensure_future(serve(PORT + 1))
+async def main() -> None:
+    loop = asyncio.get_running_loop()
+    task1 = asyncio.ensure_future(serve('s1', PORT))
+    task2 = asyncio.ensure_future(serve('s2', PORT + 1))
     task = asyncio.gather(task1, task2)
     for s in signals:
         loop.add_signal_handler(s, task.cancel)
     try:
-        loop.run_until_complete(task)
+        await task
     except asyncio.exceptions.CancelledError:
         print("Shutdown successful.")
-    finally:
-        loop.close()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
