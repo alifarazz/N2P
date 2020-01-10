@@ -50,7 +50,7 @@ async def listen_to_stdin(protocol: EchoClientProtocol) -> None:
             msg = await aioconsole.ainput()
             await protocol.send_data(msg.encode())
     except Exception:
-        raise aio.exceptions.CancelledError
+        raise aio.CancelledError
 
 
 async def main() -> None:
@@ -78,7 +78,7 @@ async def main() -> None:
         print("con made")
         await task
         listener_to_stdin.cancel()
-    except aio.exceptions.CancelledError:
+    except aio.CancelledError:
         print("Shutdown successful.")
     finally:
         transport.close()

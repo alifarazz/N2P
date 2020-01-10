@@ -2,6 +2,8 @@
 
 import socket
 import asyncio
+from typing import cast, List
+
 
 HOST: str = "127.0.0.1"
 PORT: int = 10000
@@ -24,7 +26,7 @@ async def handle_echo(reader, writer) -> None:
 
 async def main() -> None:
     server = await asyncio.start_server(handle_echo, HOST, PORT)
-    addr = server.sockets[0].getsockname()
+    addr = cast(List, server.sockets)[0].getsockname()
     print(f"Serving on {addr}")
 
     try:

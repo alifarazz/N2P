@@ -3,7 +3,7 @@
 import socket
 import asyncio
 import signal
-from typing import Tuple
+from typing import cast, List, Tuple
 
 HOST: str = "127.0.0.1"
 PORT: int = 10000
@@ -40,7 +40,7 @@ async def serve() -> None:
 
     loop = asyncio.get_running_loop()
     server = await loop.create_server(EchoProtocol, HOST, PORT)
-    addr = server.sockets[0].getsockname()
+    addr = cast(List, server.sockets)[0].getsockname()
     print(f"Serving on {addr}")
 
     try:
