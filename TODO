@@ -1,0 +1,12 @@
+peer:
+    - cleanup stdout messages.
+    - each instance of any protocol should have a name.
+      It makes it easier to identify which message belongs
+      to which task.
+    - controlprotocol should interact with client and server.
+      . kill client
+      . create client
+      . disconnect clients from server ?
+    - rest api with json between control and an external process.
+      external processes include desktop gui app, tui app and
+      maybe android app?
