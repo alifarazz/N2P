@@ -6,7 +6,7 @@ import signal
 from typing import cast, List, Tuple
 
 HOST: str = "127.0.0.1"
-PORT: int = 10000
+PORT: int = 10002
 signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
 
 

@@ -5,12 +5,12 @@ from typing import cast, List
 class ServerProtocol(aio.Protocol):
     @classmethod
     async def serve(cls, ip: str, port: int) -> None:
-        loop = aio.get_running_loop()
+        loop = aio.get_event_loop()
         server = await loop.create_server(cls, ip, port)
         addr = cast(List, server.sockets)[0].getsockname()
         print(f"Serving on {addr}")
         try:
-            await server.start_serving()
+            await server.serve_forever()
         except aio.CancelledError:
             await cls.shutdown(addr, loop)
             server.close()

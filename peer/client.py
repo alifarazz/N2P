@@ -16,6 +16,7 @@ class ClientProtocol(aio.Protocol):
         except EOFError:
             prtcl.on_con_lost.cancel()
         except Exception:
+            print("HACKety HACK HACK")
             raise aio.CancelledError
 
     @classmethod
@@ -27,32 +28,35 @@ class ClientProtocol(aio.Protocol):
         transport, protocol = await loop.create_connection(
             lambda: cls(on_con_lost, on_con_made), ip, port,
         )
-        listener_to_stdin = aio.ensure_future(cls._listen_to_stdin(protocol))
+        # listener_to_stdin = aio.ensure_future(cls._listen_to_stdin(protocol))
         task = aio.gather(on_con_lost)
         try:
             await on_con_made
-            print("con made to ")
-            await task
-            listener_to_stdin.cancel()
+            # await task
+            # listener_to_stdin.cancel()
         except aio.CancelledError:
             print("Client shutdown successful.")
-        finally:
-            transport.close()
+        # finally:
+            # transport.close()
+        print("DONE")
 
     def __init__(self, on_con_lost, on_con_made):
         self.on_con_lost = on_con_lost
         self.on_con_made = on_con_made
-        self.__class__.clients.append(self)
 
     async def send_data(self, data: bytes):
         self.transport.write(data)
-        # self.transport.close()
+
+    def send_data_sync(self, data: bytes):
+        self.transport.write(data)
+
 
     def connection_made(self, transport):
         self.name = transport.get_extra_info("peername")
         print(f"Connected to server on {self.name}.")
         self.transport = transport
         self.transport.write(f"Hello from {self.name}".encode())
+        self.__class__.clients.append(self)
         self.on_con_made.set_result(True)
 
     def connection_lost(self, exc):

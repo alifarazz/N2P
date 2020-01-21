@@ -1,0 +1,7 @@
+{"ACTION": "CONNECT", "IP":"localhost", "PORT": "10000"}
+{"ACTION": "CONNECT", "IP":"localhost", "PORT": "10001"}
+{"ACTION": "SEND", "CLIENT-ID": 0, "CONTENT": "HELLO"}
+{"ACTION": "SEND", "CLIENT-ID": 1, "CONTENT": "WWWWW"}
+{"ACTION": "LIST"}
+{"ACTION": "KILL", "CLIENT-ID": 0}
+

@@ -24,7 +24,7 @@ class EchoClientProtocol(aio.Protocol):
         self.name = transport.get_extra_info("peername")
         print(f"Connected to server on {self.name}.")
         self.transport = transport
-        self.transport.write(f"Hello from {self.name}".encode())
+        # self.transport.write(f"Hello from {self.name}".encode())
         self.on_con_made.set_result(True)
 
     def connection_lost(self, exc):
@@ -33,11 +33,11 @@ class EchoClientProtocol(aio.Protocol):
         if not self.on_con_lost.cancelled():
             self.on_con_lost.set_result(True)
 
-    def data_received(self, data):
+    def data_received(self, data: bytes):
         msg: str = data.decode()
         print(f"Received: {msg} from {self.name}")
 
-    async def send_data(self, data):
+    async def send_data(self, data: bytes):
         self.transport.write(data)
         # self.transport.close()
 

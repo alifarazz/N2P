@@ -2,6 +2,7 @@
 
 import asyncio
 import signal
+import sys
 from typing import cast, List, Tuple
 
 HOST: str = "127.0.0.1"
@@ -40,7 +41,7 @@ async def serve(id: str, port: int) -> None:
         print(f"Worker {id} shutdown.")
 
     loop = asyncio.get_running_loop()
-    server = await loop.create_server(EchoServerProtocol, HOST, port)
+    server = await loop.create_server(EchoServerProtocol, sys.argv[1], port)
     addr = cast(List, server.sockets)[0].getsockname()
     print(f"Serving on {addr}")
     try:
