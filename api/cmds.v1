@@ -6,9 +6,19 @@ actions:
 
 {"ACTION": "CONNECT", "IP":"localhost", "PORT": "10000"} -> {"CONNECT": true} && {"CONNECT": false}
 {"ACTION": "CONNECT", "IP":"localhost", "PORT": "10001"}
-{"ACTION": "SEND", "CLIENT-ID": 0, "CONTENT": "HELLO"}   -> {"SEND": true} && {"SEND": false}
-{"ACTION": "SEND", "CLIENT-ID": 1, "CONTENT": "WWWWW"}
-{"ACTION": "LIST"}               ---> {"LIST": true, "SERVER": [["127.0.0.1", 10002]], "CLIENT": [["127.0.0.1", 10000]]}
-{"ACTION": "KILL", "CLIENT-ID": 0} --> {"ACTION": "KILL", "CLIENT-ID": 0}
+
+{"ACTION": "BROADCAST", "CONTENT": "HELLO"} -> {"SEND": true} && {"SEND": false}
+
+// not ready
+// {"ACTION": "SEND", "CLIENT-SOCKET": "<<ip>>:<<port>>", "CONTENT": "WWWWW"}
+
+{"ACTION": "LIST"}
+{"ACTION": "LIST"}  --->  {"LIST": true,
+                           "SERVER": ["127.0.0.1:40108", "127.0.0.1:40110", "127.0.0.1:40112"], 
+                           "CLIENT": ["127.0.0.1:10000", "127.0.0.1:10001"]
+                          }
+{"ACTION": "KILL", "CLIENT-SOCKET": 0} --> {"KILL": true} &&  {"KILL": false}
+{"ACTION": "KILL-SERVER", "CLIENT-SOCKET": "<<ip>>:<<port>>"} -> {"KILL-SERVER": true} && {"KILL-SERVER": false}
+
 ... -> {action: false}
 

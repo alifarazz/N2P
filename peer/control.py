@@ -62,7 +62,6 @@ class ControlServerProtocol(aio.Protocol):
         try:
             jsn = json.loads(msg)
             action = jsn["ACTION"]
-            print(action)
             if action == "CONNECT":
                 try:
                     ip, port = (jsn["IP"], int(jsn["PORT"]))
@@ -80,37 +79,22 @@ class ControlServerProtocol(aio.Protocol):
                 except Exception:
                     self.transport.write(json.dumps({action: False}).encode())
                     print(f"Connecting to {ip}:{port} failed.")
-
-            elif action == "SEND":
-                # ip, port = (jsn["IP"], int(jsn["PORT"]))
-                try:
-                    client_id = jsn["CLIENT-ID"]
-                    content = jsn["CONTENT"]
-                    ClientProtocol.clients[int(client_id)].send_data_sync(
-                        content.encode()
-                    )
-                    self.transport.write(json.dumps({action: True}).encode())
-                    print(f"Sent to client{client_id}")
-                except Exception:
-                    self.transport.write(json.dumps({action: False}).encode())
-                    print(f"SEND error for client{client_id}")
             elif action == "LIST":
                 try:
-                    cc = [client.name for client in ClientProtocol.clients]
-                    print(cc)
-                    sc = [s.getsockname() for s in ServerProtocol.server.sockets]
-                    print(sc)
-                    self.transport.write(json.dumps({action: True, "SERVER": sc, "CLIENT": cc}).encode())
-                    print(f"List of server: {sc}", f"List of clients: {cc}", sep='\n')
+                    print(ClientProtocol.clients.keys())
+                    cc = [cid for cid in ClientProtocol.clients.keys()]
+                    sc = list(ServerProtocol.transports.keys())
+                    self.transport.write(
+                        json.dumps({action: True, "SERVER": sc, "CLIENT": cc}).encode()
+                    )
+                    print(f"List of server: {sc}", f"List of clients: {cc}", sep="\n")
                 except Exception:
                     self.transport.write(json.dumps({action: False}).encode())
                     print("Failed to list clients and server workers.")
             elif action == "KILL":
                 try:
-                    client_id = int(jsn["CLIENT-ID"])
-                    client = ClientProtocol.clients[client_id]
-                    del ClientProtocol.clients[client_id]
-                    client.transport.close()
+                    client_id = jsn["CLIENT-SOCKET"]
+                    ClientProtocol.clients[client_id].transport.close()
                     self.transport.write(json.dumps({action: True}).encode())
                 except Exception:
                     self.transport.write(json.dumps({action: False}).encode())
@@ -118,9 +102,48 @@ class ControlServerProtocol(aio.Protocol):
                         print(f"Failed to kill client: {jsn['CLIENT-ID']}")
                     except json.decoder.JSONDecodeError:
                         print("Failed to kill client and bad CLIENT-ID.")
+            elif action == "KILL-SERVER":
+                try:
+                    client_id = jsn["CLIENT-SOCKET"]
+                    ServerProtocol.transports[client_id].close()
+                    self.transport.write(json.dumps({action: True}).encode())
+                    print(f"Killed client on server with clientid: {client_id}")
+                except Exception:
+                    self.transport.write(json.dumps({action: False}).encode())
+                    try:
+                        print(f"Failed to kill server's client: {jsn['CLIENT-ID']}")
+                    except json.decoder.JSONDecodeError:
+                        print("Failed to kill server's client and bad CLIENT-ID.")
+            # elif action == "SEND":
+            #     # ip, port = (jsn["IP"], int(jsn["PORT"]))
+            #     try:
+            #         client_id = jsn["CLIENT-SOCKET"]
+            #         content = jsn["CONTENT"]
+            #         ClientProtocol.clients[client_id].send_data_sync(content.encode())
+            #         self.transport.write(json.dumps({action: True}).encode())
+            #         print(f"Sent to client{client_id}")
+            #     except Exception:
+            #         self.transport.write(json.dumps({action: False}).encode())
+            #         print(f"SEND error for client{client_id}")
+            elif action == "BROADCAST":
+                try:
+                    content = jsn["CONTENT"]
+                    for client_id in ServerProtocol.transports.keys():
+                        transport = ServerProtocol.transports[client_id]
+                        ServerProtocol.send_data_sync(
+                            transport,
+                            content.encode()
+                        )
+                        print(f"Sent to client {client_id}")
+                    self.transport.write(json.dumps({action: True}).encode())
+                except Exception:
+                    self.transport.write(json.dumps({action: False}).encode())
+                    print(f"SEND error for client {client_id}")
             else:
                 self.transport.write(json.dumps({action: False}).encode())
                 print("Action Not supported")
+        except KeyError:
+            print("error on decoding json")
         except json.decoder.JSONDecodeError:
             print("error on decoding json")
         # self.transport.write(data)

@@ -1,9 +1,11 @@
 import asyncio as aio
-from typing import cast, List
+from typing import cast, List, Dict
+
 
 
 class ServerProtocol(aio.Protocol):
     server = None
+    transports: Dict = {}
 
     @classmethod
     async def serve(cls, ip: str, port: int) -> None:
@@ -26,16 +28,27 @@ class ServerProtocol(aio.Protocol):
         # asyncio.gather(*pending)
         print(f"Worker {addr} shutdown.")
 
+    @staticmethod
+    def send_data_sync(transport, data: bytes):
+        transport.write(data)
+
     # callback function
     def connection_made(self, transport):
         self.name = transport.get_extra_info("peername")
+        self.name = f"{self.name[0]}:{self.name[1]}"
         print(f"Connected client on {self.name}.")
         self.transport = transport
+        self.__class__.transports[self.name] = transport
 
     # callback function
     def connection_lost(self, exc):
         # What should I do with exc?
         print(f"Connection {self.name} closed.")
+        try:
+            del self.__class__.transports[self.name]
+        except KeyError:
+            pass
+
 
     # callback function
     def data_received(self, data):

@@ -1,10 +1,10 @@
 import asyncio as aio
 import aioconsole
-from typing import List
+from typing import List, Dict
 
 
 class ClientProtocol(aio.Protocol):
-    clients: List = []
+    clients: Dict = {}
 
     @staticmethod
     async def _listen_to_stdin(prtcl):
@@ -53,15 +53,20 @@ class ClientProtocol(aio.Protocol):
 
     def connection_made(self, transport):
         self.name = transport.get_extra_info("peername")
+        self.name = f"{self.name[0]}:{self.name[1]}"
         print(f"Connected to server on {self.name}.")
         self.transport = transport
         self.transport.write(f"Hello from {self.name}".encode())
-        self.__class__.clients.append(self)
+        self.__class__.clients[self.name] = self
         self.on_con_made.set_result(True)
 
     def connection_lost(self, exc):
         # What should I do with exc?
         print(f"Connection closed: {self.name} .")
+        try:
+            del self.__class__.clients[self.name]
+        except KeyError:
+            pass
         if not self.on_con_lost.cancelled():
             self.on_con_lost.set_result(True)
 
