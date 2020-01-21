@@ -3,10 +3,12 @@ from typing import cast, List
 
 
 class ServerProtocol(aio.Protocol):
+    server = None
+
     @classmethod
     async def serve(cls, ip: str, port: int) -> None:
         loop = aio.get_event_loop()
-        server = await loop.create_server(cls, ip, port)
+        cls.server = server = await loop.create_server(cls, ip, port)
         addr = cast(List, server.sockets)[0].getsockname()
         print(f"Serving on {addr}")
         try:
@@ -41,5 +43,4 @@ class ServerProtocol(aio.Protocol):
         print(f"Received: {msg} from {self.name}")
         print(f"Sendnig:  {msg} to   {self.name}")
         self.transport.write(data)
-
 

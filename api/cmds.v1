@@ -1,0 +1,14 @@
+actions:
+    connect,
+    send,
+    list,
+    kill client
+
+{"ACTION": "CONNECT", "IP":"localhost", "PORT": "10000"} -> {"CONNECT": true} && {"CONNECT": false}
+{"ACTION": "CONNECT", "IP":"localhost", "PORT": "10001"}
+{"ACTION": "SEND", "CLIENT-ID": 0, "CONTENT": "HELLO"}   -> {"SEND": true} && {"SEND": false}
+{"ACTION": "SEND", "CLIENT-ID": 1, "CONTENT": "WWWWW"}
+{"ACTION": "LIST"}               ---> {"LIST": true, "SERVER": [["127.0.0.1", 10002]], "CLIENT": [["127.0.0.1", 10000]]}
+{"ACTION": "KILL", "CLIENT-ID": 0} --> {"ACTION": "KILL", "CLIENT-ID": 0}
+... -> {action: false}
+
