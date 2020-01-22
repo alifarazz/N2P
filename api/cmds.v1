@@ -7,17 +7,17 @@ actions:
 {"ACTION": "CONNECT", "IP":"localhost", "PORT": "10000"} -> {"CONNECT": true} && {"CONNECT": false}
 {"ACTION": "CONNECT", "IP":"localhost", "PORT": "10001"}
 
-{"ACTION": "BROADCAST", "CONTENT": "HELLO"} -> {"SEND": true} && {"SEND": false}
+{"ACTION": "BROADCAST", "CONTENT": "HELLO"} -> {"BROADCAST": true} && {"BROADCAST": false}
 
 // not ready
 // {"ACTION": "SEND", "CLIENT-SOCKET": "<<ip>>:<<port>>", "CONTENT": "WWWWW"}
 
 {"ACTION": "LIST"}
 {"ACTION": "LIST"}  --->  {"LIST": true,
-                           "SERVER": ["127.0.0.1:40108", "127.0.0.1:40110", "127.0.0.1:40112"], 
+                           "SERVER": ["127.0.0.1:40108", "127.0.0.1:40110", "127.0.0.1:40112"],
                            "CLIENT": ["127.0.0.1:10000", "127.0.0.1:10001"]
                           }
-{"ACTION": "KILL", "CLIENT-SOCKET": 0} --> {"KILL": true} &&  {"KILL": false}
+{"ACTION": "KILL", "CLIENT-SOCKET": "<<ip>>:<<port>>"} --> {"KILL": true} &&  {"KILL": false}
 {"ACTION": "KILL-SERVER", "CLIENT-SOCKET": "<<ip>>:<<port>>"} -> {"KILL-SERVER": true} && {"KILL-SERVER": false}
 
 ... -> {action: false}
