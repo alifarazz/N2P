@@ -128,13 +128,7 @@ class ControlServerProtocol(aio.Protocol):
             elif action == "BROADCAST":
                 try:
                     content = jsn["CONTENT"]
-                    for client_id in ServerProtocol.transports.keys():
-                        transport = ServerProtocol.transports[client_id]
-                        ServerProtocol.send_data_sync(
-                            transport,
-                            content.encode()
-                        )
-                        print(f"Sent to client {client_id}")
+                    ServerProtocol.broadcast(content)
                     self.transport.write(json.dumps({action: True}).encode())
                 except Exception:
                     self.transport.write(json.dumps({action: False}).encode())

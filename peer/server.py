@@ -1,7 +1,9 @@
+import time
+import uuid
 import asyncio as aio
 from typing import cast, List, Dict
 
-
+from msg_repo import MsgRepo
 
 class ServerProtocol(aio.Protocol):
     server = None
@@ -18,6 +20,28 @@ class ServerProtocol(aio.Protocol):
         except aio.CancelledError:
             await cls.shutdown(addr, loop)
             server.close()
+
+    @classmethod
+    def relay(cls, jsn):
+        data = (json.dumps(jsn)).encode()
+        for transport in cls.transports.values():  # add prints for clients
+            cls.send_data_sync(transport, data)
+        print("relaying done")
+
+    @classmethod
+    def broadcast(cls, content):
+        id = str(uuid.uuid4())
+        src_name = f"{self.name[0]}:{self.name[1]}"
+        content_jsn = {"text": content, "timestamp": int(time.time()), "srcp": src_name}
+        jsn = {"uuid": id, "type": "B", "content": content_jsn}
+        print(f"relay json: f{jsn}")
+        data = (json.dumps(jsn)).encode()
+        for client_id in cls.transports.keys():
+            transport = cls.transports[client_id]
+            cls.send_data_sync(transport, data)
+            print(f"Sent to client {client_id}")
+        print("relaying done")
+        MsgRepo.mark_uuid_as_seen(id)
 
     @staticmethod
     async def shutdown(addr, loop: aio.AbstractEventLoop) -> None:
@@ -48,7 +72,6 @@ class ServerProtocol(aio.Protocol):
             del self.__class__.transports[self.name]
         except KeyError:
             pass
-
 
     # callback function
     def data_received(self, data):

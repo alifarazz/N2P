@@ -1,23 +1,28 @@
+import json
 import asyncio as aio
-import aioconsole
 from typing import List, Dict
+
+from msg_repo import MsgRepo
+from server import ServerProtocol
+
+# import aioconsole
 
 
 class ClientProtocol(aio.Protocol):
     clients: Dict = {}
 
-    @staticmethod
-    async def _listen_to_stdin(prtcl):
-        try:
-            while not prtcl.on_con_lost.done():
-                print(">", end="")
-                msg = await aioconsole.ainput()
-                await prtcl.send_data(msg.encode())
-        except EOFError:
-            prtcl.on_con_lost.cancel()
-        except Exception:
-            print("HACKety HACK HACK")
-            raise aio.CancelledError
+    # @staticmethod
+    # async def _listen_to_stdin(prtcl):
+    #     try:
+    #         while not prtcl.on_con_lost.done():
+    #             print(">", end="")
+    #             msg = await aioconsole.ainput()
+    #             await prtcl.send_data(msg.encode())
+    #     except EOFError:
+    #         prtcl.on_con_lost.cancel()
+    #     except Exception:
+    #         print("HACKety HACK HACK")
+    #         raise aio.CancelledError
 
     @classmethod
     async def connect_to(cls, ip: str, port: int):
@@ -37,7 +42,7 @@ class ClientProtocol(aio.Protocol):
         except aio.CancelledError:
             print("Client shutdown successful.")
         # finally:
-            # transport.close()
+        # transport.close()
         print("DONE")
 
     def __init__(self, on_con_lost, on_con_made):
@@ -49,7 +54,6 @@ class ClientProtocol(aio.Protocol):
 
     def send_data_sync(self, data: bytes):
         self.transport.write(data)
-
 
     def connection_made(self, transport):
         self.name = transport.get_extra_info("peername")
@@ -70,6 +74,25 @@ class ClientProtocol(aio.Protocol):
         if not self.on_con_lost.cancelled():
             self.on_con_lost.set_result(True)
 
+    def relay_broadcast_msg(self, jsn):
+        if not MsgRepo.is_broadcast_uuid_dup(jsn["uuid"]):
+            ServerProtocol.relay(jsn)
+
     def data_received(self, data: bytes):
-        msg: str = data.decode()
-        print(f"Received: {msg} from {self.name}")
+        msg: str
+        try:
+            msg = data.decode()
+        except Exception:
+            print(f"error on decoding incoming data, CLIENT: {self.name}")
+        # print(f"Received: {msg} from {self.name}")
+        try:
+            jsn = json.loads(msg)
+            if jsn["type"] == "B":
+                self.relay_broadcast_msg(jsn)
+            else:
+                print(f"unsupported msg type, arrived at CLIENT: {self.name}\n{msg}")
+        except KeyError:
+            print(f"error on decoding json, CLIENT: {self.name}")
+        except json.decoder.JSONDecodeError:
+            print(f"error on decoding json, CLIENT: {self.name}")
+
