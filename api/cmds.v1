@@ -26,6 +26,7 @@ actions:
 ... -> {action: false}
 
 
+{"ACTION": "CONNECT", "IP":"localhost", "PORT": "10000"}
 {"ACTION": "CONNECT", "IP":"localhost", "PORT": "10001"}
 {"ACTION": "CONNECT", "IP":"localhost", "PORT": "10002"}
 

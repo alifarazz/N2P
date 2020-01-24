@@ -1,4 +1,5 @@
 import json
+import re
 import asyncio as aio
 from typing import List, Dict
 
@@ -99,8 +100,14 @@ class ClientProtocol(aio.Protocol):
             if jsn["type"] == "B":
                 self.relay_broadcast_msg(jsn)
             elif jsn["type"] == "S":
-                server.ServerProtocol.relay_search(jsn)
-            elif jsn["type"] == 'A':
+                regex = jsn["content"]["regex"]
+                r = re.compile(regex)
+                res = list(filter(r.match, MsgRepo.my_boradcast_contents))
+                if res:
+                    self.broadcast_answer(jsn, res[0])
+                else:
+                    server.ServerProtocol.relay_search(jsn)
+            elif jsn["type"] == "A":
                 try:
                     server.ServerProtocol.relay_answer(jsn)
                 except Exception as e:
@@ -111,3 +118,15 @@ class ClientProtocol(aio.Protocol):
             print(f"error on decoding json, CLIENT: {self.name}")
         except json.decoder.JSONDecodeError:
             print(f"error on decoding json, CLIENT: {self.name}")
+
+    def broadcast_answer(self, jsn, result):
+        hop_peer = jsn["content"]["hop-peer"]
+        content_jsn = {
+            "result": result,
+            "hop-peer": hop_peer,
+        }
+        jsn = {"type": "A", "content": content_jsn}
+        print(f"relay answer json: {jsn}")
+        data = (json.dumps(jsn)).encode()
+        self.transport.write(data)
+        print("Answering done")
