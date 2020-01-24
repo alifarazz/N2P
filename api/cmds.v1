@@ -8,6 +8,8 @@ actions:
 {"ACTION": "CONNECT", "IP":"localhost", "PORT": "10001"}
 
 {"ACTION": "BROADCAST", "CONTENT": "HELLO"}
+{"ACTION": "BROADCAST", "CONTENT": "HELLLLO"}
+
 {"ACTION": "BROADCAST", "CONTENT": "HELLO"} -> {"BROADCAST": true} && {"BROADCAST": false}
 
 // not ready
@@ -23,5 +25,14 @@ actions:
 
 ... -> {action: false}
 
-{"ACTION": "CONNECT", "IP":"localhost", "PORT": "10002"}
+
 {"ACTION": "CONNECT", "IP":"localhost", "PORT": "10001"}
+{"ACTION": "CONNECT", "IP":"localhost", "PORT": "10002"}
+
+
+{"ACTION": "CONNECT", "IP":"192.168.42.114", "PORT": "10001"}
+{"ACTION": "CONNECT", "IP":"192.168.42.114", "PORT": "10002"}
+
+
+
+{"ACTION": "SEARCH", "REGEX": "HE+.*"}

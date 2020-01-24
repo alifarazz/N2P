@@ -45,10 +45,7 @@ async def main() -> None:
     #     aio.new_event_loop(), ServerProtocol.serve(ip_s, int(port_s))
     # )
 
-    # task_control = aio.ensure_future(ControlServerProtocol.serve(ip_a, int(port_a)))
-
     tasks = aio.gather(task_server, task_control)
-    # tasks = aio.gather(task_control)
     for s in cancel_signals:
         loop.add_signal_handler(s, tasks.cancel)
     try:
@@ -58,13 +55,13 @@ async def main() -> None:
 
     for w in ControlServerProtocol.workers:
         w.loop.stop()
-    # server.loop.stop()
     for w in ControlServerProtocol.workers:
-        w.loop.close()
-    # server.loop.close()
+        try:
+            w.loop.close()
+        except RuntimeError:
+            pass
     for w in ControlServerProtocol.workers:
         w.thread.join()
-    # server.loop.join()
 
 
 if __name__ == "__main__":

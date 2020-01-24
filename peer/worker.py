@@ -8,13 +8,16 @@ class Worker:
         self.thread = threading.Thread(target=self.linit, args=(loop, ws))
         self.loop = loop
         self.thread.start()
-        self.thread.join
+        # self.thread.join
 
     def linit(self, loop, coro):
         cancel_signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
         aio.set_event_loop(loop)
-        # try:
-        loop.run_until_complete(coro)
+        try:
+            loop.run_until_complete(coro)
+        except RuntimeError:
+            pass
+            # self.thread.jin
         print("CORO complete")
         # finally:
             # loop.close()

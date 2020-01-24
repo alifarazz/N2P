@@ -4,8 +4,9 @@ import asyncio as aio
 from typing import cast, List, Dict
 
 import client as Client
-from server import ServerProtocol
+import server
 from worker import Worker
+from msg_repo import MsgRepo
 
 
 class ControlServerProtocol(aio.Protocol):
@@ -31,6 +32,13 @@ class ControlServerProtocol(aio.Protocol):
     @classmethod
     def push_boradcast_msg(cls, content):
         msg = {"TYPE": "BORADCAST-MSG", "content": content}
+        data = (json.dumps(msg)).encode()
+        for transport in cls.transports.values():
+            transport.write(data)
+
+    @classmethod
+    def push_search_result(cls, result):
+        msg = {"TYPE": "SEARCH-ANSWER", "result": result}
         data = (json.dumps(msg)).encode()
         for transport in cls.transports.values():
             transport.write(data)
@@ -96,7 +104,7 @@ class ControlServerProtocol(aio.Protocol):
                 try:
                     print(Client.ClientProtocol.clients.keys())
                     cc = [cid for cid in Client.ClientProtocol.clients.keys()]
-                    sc = list(ServerProtocol.transports.keys())
+                    sc = list(server.ServerProtocol.transports.keys())
                     self.transport.write(
                         json.dumps({action: True, "SERVER": sc, "CLIENT": cc}).encode()
                     )
@@ -118,7 +126,7 @@ class ControlServerProtocol(aio.Protocol):
             elif action == "KILL-SERVER":
                 try:
                     client_id = jsn["CLIENT-SOCKET"]
-                    ServerProtocol.transports[client_id].close()
+                    server.ServerProtocol.transports[client_id].close()
                     self.transport.write(json.dumps({action: True}).encode())
                     print(f"Killed client on server with clientid: {client_id}")
                 except Exception:
@@ -127,25 +135,23 @@ class ControlServerProtocol(aio.Protocol):
                         print(f"Failed to kill server's client: {jsn['CLIENT-ID']}")
                     except json.decoder.JSONDecodeError:
                         print("Failed to kill server's client and bad CLIENT-ID.")
-            # elif action == "SEND":
-            #     # ip, port = (jsn["IP"], int(jsn["PORT"]))
-            #     try:
-            #         client_id = jsn["CLIENT-SOCKET"]
-            #         content = jsn["CONTENT"]
-            #         Client.ClientProtocol.clients[client_id].send_data_sync(content.encode())
-            #         self.transport.write(json.dumps({action: True}).encode())
-            #         print(f"Sent to client{client_id}")
-            #     except Exception:
-            #         self.transport.write(json.dumps({action: False}).encode())
-            #         print(f"SEND error for client{client_id}")
             elif action == "BROADCAST":
-                # try:
-                content = jsn["CONTENT"]
-                ServerProtocol.broadcast(content)
-                self.transport.write(json.dumps({action: True}).encode())
-                # except Exception:
-                # self.transport.write(json.dumps({action: False}).encode())
-                # print(f"Error on broadcasting")
+                try:
+                    content = jsn["CONTENT"]
+                    MsgRepo.my_boradcast_contents.add(content)
+                    server.ServerProtocol.broadcast(content)
+                    self.transport.write(json.dumps({action: True}).encode())
+                except Exception as e:
+                    self.transport.write(json.dumps({action: False}).encode())
+                    print(f"Error on broadcasting,\nEX:{e.args}")
+            elif action == "SEARCH":
+                try:
+                    regex = jsn["REGEX"]
+                    server.ServerProtocol.search(regex)
+                    self.transport.write(json.dumps({action: True}).encode())
+                except Exception as e:
+                    self.transport.write(json.dumps({action: False}).encode())
+                    print(f"Error on searching,\nEX:{e.args}")
             else:
                 self.transport.write(json.dumps({action: False}).encode())
                 print("Action Not supported")

@@ -3,7 +3,7 @@ import asyncio as aio
 from typing import List, Dict
 
 from msg_repo import MsgRepo
-from server import ServerProtocol
+import server
 import control as ctrl_server
 
 # import aioconsole
@@ -78,11 +78,11 @@ class ClientProtocol(aio.Protocol):
 
     def relay_broadcast_msg(self, jsn):
         uid = jsn["uuid"]
-        print(jsn)
         if not MsgRepo.is_broadcast_uuid_dup(uid):
-            MsgRepo.mark_uuid_as_seen(uid)
+            print(jsn)
+            MsgRepo.mark_boradcast_uuid_as_seen(uid)
             ctrl_server.ControlServerProtocol.push_boradcast_msg(jsn["content"])
-            ServerProtocol.relay(jsn)
+            server.ServerProtocol.relay(jsn)
         else:
             print(f"Client {self.name}: Duplicate msg yanked")
 
@@ -98,10 +98,16 @@ class ClientProtocol(aio.Protocol):
             jsn = json.loads(msg)
             if jsn["type"] == "B":
                 self.relay_broadcast_msg(jsn)
+            elif jsn["type"] == "S":
+                server.ServerProtocol.relay_search(jsn)
+            elif jsn["type"] == 'A':
+                try:
+                    server.ServerProtocol.relay_answer(jsn)
+                except Exception as e:
+                    print(f"Error on relaying answer: {e.args}, ans:{jsn}")
             else:
                 print(f"unsupported msg type, arrived at CLIENT: {self.name}\n{msg}")
         except KeyError:
             print(f"error on decoding json, CLIENT: {self.name}")
         except json.decoder.JSONDecodeError:
             print(f"error on decoding json, CLIENT: {self.name}")
-
