@@ -14,6 +14,7 @@ import concurrent
 from client import ClientProtocol
 from server import ServerProtocol
 from control import ControlServerProtocol
+import worker
 
 cancel_signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
 
@@ -40,10 +41,14 @@ async def main() -> None:
         task_server = await loop.run_in_executor(
             pool, lambda: ServerProtocol.serve(ip_s, int(port_s))
         )
+    # server = worker.Worker(
+    #     aio.new_event_loop(), ServerProtocol.serve(ip_s, int(port_s))
+    # )
 
     # task_control = aio.ensure_future(ControlServerProtocol.serve(ip_a, int(port_a)))
 
     tasks = aio.gather(task_server, task_control)
+    # tasks = aio.gather(task_control)
     for s in cancel_signals:
         loop.add_signal_handler(s, tasks.cancel)
     try:
@@ -51,13 +56,15 @@ async def main() -> None:
     except aio.CancelledError:
         print("Shutdown successful.")
 
-
     for w in ControlServerProtocol.workers:
         w.loop.stop()
+    # server.loop.stop()
     for w in ControlServerProtocol.workers:
         w.loop.close()
+    # server.loop.close()
     for w in ControlServerProtocol.workers:
         w.thread.join()
+    # server.loop.join()
 
 
 if __name__ == "__main__":

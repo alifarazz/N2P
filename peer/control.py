@@ -1,9 +1,9 @@
 import json
 import time
 import asyncio as aio
-from typing import cast, List
+from typing import cast, List, Dict
 
-from client import ClientProtocol
+import client as Client
 from server import ServerProtocol
 from worker import Worker
 
@@ -11,13 +11,14 @@ from worker import Worker
 class ControlServerProtocol(aio.Protocol):
     # connection_lk = aio.Lock()
     workers: List = []
+    transports: Dict = {}
 
     @classmethod
     async def serve(cls, ip: str, port: int) -> None:
         loop = aio.get_event_loop()
         # on_con_lost = loop.create_future()
         # cls.queue = janus.Queue(loop=loop)
-        # ClientProtocol.queue = cls.queue
+        # Client.ClientProtocol.queue = cls.queue
         server = await loop.create_server(cls, ip, port)
         addr = cast(List, server.sockets)[0].getsockname()
         print(f"Control Serving on {addr}")
@@ -26,6 +27,13 @@ class ControlServerProtocol(aio.Protocol):
         except aio.CancelledError:
             await cls.shutdown(addr, loop)
             server.close()
+
+    @classmethod
+    def push_boradcast_msg(cls, content):
+        msg = {"TYPE": "BORADCAST-MSG", "content": content}
+        data = (json.dumps(msg)).encode()
+        for transport in cls.transports.values():
+            transport.write(data)
 
     @staticmethod
     async def shutdown(addr, loop: aio.AbstractEventLoop) -> None:
@@ -45,6 +53,7 @@ class ControlServerProtocol(aio.Protocol):
         self.name = transport.get_extra_info("peername")
         print(f"Connected admin on {self.name}.")
         self.transport = transport
+        self.__class__.transports[f"{self.name[0]}:{self.name[1]}"] = transport
 
     # callback function
     def connection_lost(self, exc):
@@ -53,6 +62,10 @@ class ControlServerProtocol(aio.Protocol):
         # self.__class__.connection_lk.acquire()
         # if not self.on_con_lost.cancelled():
         #     self.on_con_lost.set_result(True)
+        try:
+            del self.__class__.transports[f"{self.name[0]}:{self.name[1]}"]
+        except KeyError:
+            pass
 
     # callback function
     def data_received(self, data):
@@ -65,12 +78,12 @@ class ControlServerProtocol(aio.Protocol):
             if action == "CONNECT":
                 try:
                     ip, port = (jsn["IP"], int(jsn["PORT"]))
-                    # coro = ClientProtocol.connect_to(ip, port)
+                    # coro = Client.ClientProtocol.connect_to(ip, port)
                     # future = aio.run_coroutine_threadsafe(coro, loop)
                     print(f"Connecting to {ip}:{port}")
                     # future.result(2)  # 2 secs timeout
                     w = Worker(
-                        aio.new_event_loop(), ClientProtocol.connect_to(ip, port)
+                        aio.new_event_loop(), Client.ClientProtocol.connect_to(ip, port)
                     )
                     self.__class__.workers.append(w)
                     # time.sleep(0.1)
@@ -81,8 +94,8 @@ class ControlServerProtocol(aio.Protocol):
                     print(f"Connecting to {ip}:{port} failed.")
             elif action == "LIST":
                 try:
-                    print(ClientProtocol.clients.keys())
-                    cc = [cid for cid in ClientProtocol.clients.keys()]
+                    print(Client.ClientProtocol.clients.keys())
+                    cc = [cid for cid in Client.ClientProtocol.clients.keys()]
                     sc = list(ServerProtocol.transports.keys())
                     self.transport.write(
                         json.dumps({action: True, "SERVER": sc, "CLIENT": cc}).encode()
@@ -94,7 +107,7 @@ class ControlServerProtocol(aio.Protocol):
             elif action == "KILL":
                 try:
                     client_id = jsn["CLIENT-SOCKET"]
-                    ClientProtocol.clients[client_id].transport.close()
+                    Client.ClientProtocol.clients[client_id].transport.close()
                     self.transport.write(json.dumps({action: True}).encode())
                 except Exception:
                     self.transport.write(json.dumps({action: False}).encode())
@@ -119,20 +132,20 @@ class ControlServerProtocol(aio.Protocol):
             #     try:
             #         client_id = jsn["CLIENT-SOCKET"]
             #         content = jsn["CONTENT"]
-            #         ClientProtocol.clients[client_id].send_data_sync(content.encode())
+            #         Client.ClientProtocol.clients[client_id].send_data_sync(content.encode())
             #         self.transport.write(json.dumps({action: True}).encode())
             #         print(f"Sent to client{client_id}")
             #     except Exception:
             #         self.transport.write(json.dumps({action: False}).encode())
             #         print(f"SEND error for client{client_id}")
             elif action == "BROADCAST":
-                try:
-                    content = jsn["CONTENT"]
-                    ServerProtocol.broadcast(content)
-                    self.transport.write(json.dumps({action: True}).encode())
-                except Exception:
-                    self.transport.write(json.dumps({action: False}).encode())
-                    print(f"SEND error for client {client_id}")
+                # try:
+                content = jsn["CONTENT"]
+                ServerProtocol.broadcast(content)
+                self.transport.write(json.dumps({action: True}).encode())
+                # except Exception:
+                # self.transport.write(json.dumps({action: False}).encode())
+                # print(f"Error on broadcasting")
             else:
                 self.transport.write(json.dumps({action: False}).encode())
                 print("Action Not supported")

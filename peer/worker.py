@@ -15,6 +15,6 @@ class Worker:
         aio.set_event_loop(loop)
         # try:
         loop.run_until_complete(coro)
+        print("CORO complete")
         # finally:
             # loop.close()
-

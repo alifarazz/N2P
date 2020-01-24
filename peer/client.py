@@ -4,6 +4,7 @@ from typing import List, Dict
 
 from msg_repo import MsgRepo
 from server import ServerProtocol
+import control as ctrl_server
 
 # import aioconsole
 
@@ -39,11 +40,12 @@ class ClientProtocol(aio.Protocol):
             await on_con_made
             # await task
             # listener_to_stdin.cancel()
+            await on_con_lost
         except aio.CancelledError:
             print("Client shutdown successful.")
         # finally:
         # transport.close()
-        print("DONE")
+        print("Client DONE")
 
     def __init__(self, on_con_lost, on_con_made):
         self.on_con_lost = on_con_lost
@@ -60,7 +62,7 @@ class ClientProtocol(aio.Protocol):
         self.name = f"{self.name[0]}:{self.name[1]}"
         print(f"Connected to server on {self.name}.")
         self.transport = transport
-        self.transport.write(f"Hello from {self.name}".encode())
+        # self.transport.write(f"Hello from {self.name}".encode())
         self.__class__.clients[self.name] = self
         self.on_con_made.set_result(True)
 
@@ -75,11 +77,18 @@ class ClientProtocol(aio.Protocol):
             self.on_con_lost.set_result(True)
 
     def relay_broadcast_msg(self, jsn):
-        if not MsgRepo.is_broadcast_uuid_dup(jsn["uuid"]):
+        uid = jsn["uuid"]
+        print(jsn)
+        if not MsgRepo.is_broadcast_uuid_dup(uid):
+            MsgRepo.mark_uuid_as_seen(uid)
+            ctrl_server.ControlServerProtocol.push_boradcast_msg(jsn["content"])
             ServerProtocol.relay(jsn)
+        else:
+            print(f"Client {self.name}: Duplicate msg yanked")
 
     def data_received(self, data: bytes):
         msg: str
+        print("incoming")
         try:
             msg = data.decode()
         except Exception:
