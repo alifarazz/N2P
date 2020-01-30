@@ -6,6 +6,9 @@
 </p>
 
 
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+
+
 A basic P2P mesh network implemented in multi-threaded asynchronous python.
 
 Each peer can broadcast a message. The message is received by other peers which have subscribed to it. Subscribing peers will also broadcast the message but retain the originals broadcaster's info. The peers will automatically detect and control message floods.
