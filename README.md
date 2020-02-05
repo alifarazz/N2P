@@ -34,4 +34,4 @@ Also, peers can query other peers for a search. The first match will be returned
 1. Fork the project.
 2. Create a new branch with an appropriate name.
 3. Commit the changes, Please use meaningful commit messages.([guide](https://github.com/RomuloOliveira/commit-messages-guide))
-4. Create a merge request to one of the basic branches.
+4. Submit a pull/merge request to this repo's master branch.
