@@ -27,7 +27,7 @@ Also, peers can query other peers for a search. The first match will be returned
   - The first argument is the address listening server's socket to let other peers connect.
   - The second argument is the address controlling server's socket to let users control the peer.
 - Connect to the controlling server using a TCP client. You can use `netcat` command. Or `telnet`.
-  - `nc <ip>:<port>`
+  - `nc <ip> <port>`
 - List of all commands and their responses is listed in `api/`.
 
 ## Contribution
